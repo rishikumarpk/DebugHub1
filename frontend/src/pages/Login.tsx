@@ -1,7 +1,9 @@
 import { Bug } from 'lucide-react';
 import { DottedSurface } from '@/components/ui/dotted-surface';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL !== undefined
+    ? import.meta.env.VITE_API_URL
+    : (import.meta.env.PROD ? '' : 'http://localhost:3001');
 
 export function Login() {
     const handleGoogleLogin = () => {
