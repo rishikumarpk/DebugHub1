@@ -36,13 +36,13 @@ Return strictly the JSON array, no markdown formatting.`;
         let text = "";
         let attemptError = null;
 
-        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro", "gemini-1.0-pro"];
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"];
 
         for (const modelName of modelsToTry) {
             try {
-                console.log(`[AI-Path] Trying model: ${modelName} (force v1)`);
-                // Force v1 api version which is more stable for standard keys
-                const model = ai.getGenerativeModel({ model: modelName }, { apiVersion: 'v1' });
+                console.log(`[AI-Path] Trying model: ${modelName} (force v1beta)`);
+                // Force v1beta api version since 2.5 models require it
+                const model = ai.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' });
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 text = response.text();
@@ -54,7 +54,7 @@ Return strictly the JSON array, no markdown formatting.`;
                 try {
                     console.log(`[AI-Path] Trying Direct REST fallback for ${modelName}...`);
                     const fetch = require('node-fetch');
-                    const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY?.trim()}`;
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY?.trim()}`;
                     const res = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -177,12 +177,11 @@ Return strictly the JSON object, no markdown formatting.`;
         let attemptError = null;
 
         // Try multiple model IDs because some regions or keys have different support
-        const modelsToTry = ["models/gemini-1.5-flash", "models/gemini-1.5-pro", "models/gemini-pro"];
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"];
 
         for (const modelName of modelsToTry) {
             try {
-                console.log(`[AI-Challenge] Trying model: ${modelName} (v1beta for maximum compatibility)`);
-                // Using v1beta as it often has the latest model support for new API keys
+                console.log(`[AI-Challenge] Trying model: ${modelName} (v1beta)`);
                 const model = ai.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' });
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
@@ -195,7 +194,7 @@ Return strictly the JSON object, no markdown formatting.`;
                 try {
                     console.log(`[AI-Challenge] Trying Direct REST fallback for ${modelName}...`);
                     const fetch = require('node-fetch');
-                    const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY?.trim()}`;
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY?.trim()}`;
                     const res = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -257,11 +256,11 @@ Keep it under 2 sentences. Speak like an experienced on-call engineer advising a
         let text = "";
         let attemptError = null;
 
-        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro", "gemini-1.0-pro"];
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"];
 
         for (const modelName of modelsToTry) {
             try {
-                const model = ai.getGenerativeModel({ model: modelName });
+                const model = ai.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' });
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 text = response.text();

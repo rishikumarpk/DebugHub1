@@ -114,7 +114,7 @@ router.get('/test-models', async (req, res) => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
         // Note: The SDK doesn't have a direct listModels in the main class
         // This is a manual check for common model names
-        const models = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro'];
+        const models = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
         const results = [];
 
         for (const m of models) {
