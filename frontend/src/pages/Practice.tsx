@@ -33,6 +33,7 @@ export default function Practice() {
     const [selectedLanguage, setSelectedLanguage] = useState<string>('');
     const [attemptId, setAttemptId] = useState<string | null>(null);
     const [showSplitView, setShowSplitView] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Timer
     useEffect(() => {
@@ -51,6 +52,7 @@ export default function Practice() {
         setHintsRevealed(0);
         setTimeElapsed(0);
         setAttemptId(null);
+        setError(null);
         try {
             const params = new URLSearchParams();
             if (diff) params.append('difficulty', diff);
@@ -61,14 +63,21 @@ export default function Practice() {
                 credentials: 'include',
                 headers: getAuthHeaders()
             });
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Server returned ${res.status}: ${errText.substring(0, 100)}`);
+            }
             const data = await res.json();
             if (data.success) {
                 setChallenge(data.data);
                 setCode(data.data.buggyCode);
                 setDifficulty(data.data.difficulty);
+            } else {
+                setError(data.error || 'Failed to generate challenge. Please try again.');
             }
         } catch (e) {
             console.error('Failed to fetch practice challenge', e);
+            setError('Connection error. Please check your internet or API_URL configuration.');
         }
         setLoading(false);
     };
@@ -148,7 +157,12 @@ export default function Practice() {
                         </p>
                     </div>
                     <div className="flex flex-col gap-3 w-full max-w-[300px]">
-                        <Button variant="cta" onClick={() => fetchChallenge()} className="w-full py-3 text-[15px]">
+                        {error && (
+                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-[8px] text-red-400 text-[13px] text-center mb-2">
+                                {error}
+                            </div>
+                        )}
+                        <Button type="button" variant="cta" onClick={() => fetchChallenge()} className="w-full py-3 text-[15px]">
                             <Zap size={18} className="mr-2" /> Start Random Challenge
                         </Button>
                         <div className="flex flex-col gap-2 w-full">
@@ -167,9 +181,9 @@ export default function Practice() {
                             </select>
 
                             <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => fetchChallenge('EASY')} className="flex-1 text-[12px] py-2">Easy</Button>
-                                <Button variant="outline" onClick={() => fetchChallenge('MEDIUM')} className="flex-1 text-[12px] py-2">Medium</Button>
-                                <Button variant="outline" onClick={() => fetchChallenge('HARD')} className="flex-1 text-[12px] py-2">Hard</Button>
+                                <Button type="button" variant="outline" onClick={() => fetchChallenge('EASY')} className="flex-1 text-[12px] py-2">Easy</Button>
+                                <Button type="button" variant="outline" onClick={() => fetchChallenge('MEDIUM')} className="flex-1 text-[12px] py-2">Medium</Button>
+                                <Button type="button" variant="outline" onClick={() => fetchChallenge('HARD')} className="flex-1 text-[12px] py-2">Hard</Button>
                             </div>
                         </div>
                     </div>

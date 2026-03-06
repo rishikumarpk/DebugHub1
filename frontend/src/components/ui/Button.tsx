@@ -9,14 +9,14 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ variant = 'primary', className = '', children, ...props }, ref) => {
+    ({ variant = 'primary', type = 'button', className = '', children, ...props }, ref) => {
         let baseClass = '';
         if (variant === 'primary') baseClass = 'btn-primary';
         if (variant === 'outline') baseClass = 'btn-outline';
         if (variant === 'cta') baseClass = 'btn-cta';
 
         return (
-            <button ref={ref} className={`${baseClass} ${className}`} {...props}>
+            <button ref={ref} type={type} className={`${baseClass} ${className}`} {...props}>
                 {children}
             </button>
         );
