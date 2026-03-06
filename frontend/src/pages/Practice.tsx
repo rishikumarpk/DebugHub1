@@ -75,9 +75,9 @@ export default function Practice() {
             } else {
                 setError(data.error || 'Failed to generate challenge. Please try again.');
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error('Failed to fetch practice challenge', e);
-            setError('Connection error. Please check your internet or API_URL configuration.');
+            setError(e.message || 'Connection error. Please check your internet.');
         }
         setLoading(false);
     };
