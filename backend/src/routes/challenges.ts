@@ -213,9 +213,13 @@ router.get('/practice/generate', async (req: any, res) => {
         const { correctCode, ...safeChallenge } = challenge;
         res.json({ success: true, data: safeChallenge });
 
-    } catch (error) {
-        console.error("Failed to generate practice challenge:", error);
-        res.status(500).json({ error: 'Failed to generate practice challenge' });
+    } catch (error: any) {
+        console.error("Failed to generate practice challenge ERROR:", error);
+        res.status(500).json({
+            error: 'Failed to generate practice challenge',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 
