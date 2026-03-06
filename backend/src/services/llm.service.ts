@@ -32,11 +32,25 @@ Return strictly the JSON array, no markdown formatting.`;
 
     try {
         console.log(`[AI-Path] Generating for: ${bugType} in ${context}...`);
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        let text = "";
+        let attemptError = null;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let text = response.text();
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro", "gemini-1.0-pro"];
+
+        for (const modelName of modelsToTry) {
+            try {
+                const model = ai.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                text = response.text();
+                if (text) break;
+            } catch (e: any) {
+                console.warn(`[AI-Path] Model ${modelName} failed: ${e.message}`);
+                attemptError = e;
+            }
+        }
+
+        if (!text) return [];
 
         // Sanitize JSON
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -134,12 +148,28 @@ Return exactly a JSON object with the following fields:
 Return strictly the JSON object, no markdown formatting.`;
 
     try {
-        console.log(`[AI-Challenge] Generating a ${difficulty} ${language} challenge with gemini-1.5-flash-latest...`);
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        console.log(`[AI-Challenge] Generating a ${difficulty} ${language} challenge...`);
+        let text = "";
+        let attemptError = null;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let text = response.text();
+        // Try multiple model IDs because some regions or keys have different support
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro", "gemini-1.0-pro"];
+
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`[AI-Challenge] Trying model: ${modelName}`);
+                const model = ai.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                text = response.text();
+                if (text) break;
+            } catch (e: any) {
+                console.warn(`[AI-Challenge] Model ${modelName} failed: ${e.message}`);
+                attemptError = e;
+            }
+        }
+
+        if (!text) throw attemptError || new Error("All models failed to generate content");
 
         // Sanitize JSON
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -182,10 +212,23 @@ Keep it under 2 sentences. Speak like an experienced on-call engineer advising a
 
     try {
         console.log(`[AI-Hint] Generating personalized hint for scenario...`);
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        let text = "";
+        let attemptError = null;
+
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro", "gemini-1.0-pro"];
+
+        for (const modelName of modelsToTry) {
+            try {
+                const model = ai.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                text = response.text();
+                if (text) break;
+            } catch (e: any) {
+                console.warn(`[AI-Hint] Model ${modelName} failed: ${e.message}`);
+                attemptError = e;
+            }
+        }
 
         console.log(`[AI-Hint] Success, response length: ${text?.length || 0}`);
         return text?.trim() || "Check the recent logs for clues.";

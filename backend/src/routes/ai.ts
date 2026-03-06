@@ -107,4 +107,29 @@ router.post('/incident-hint', async (req, res) => {
     }
 });
 
+// Debug route to see what models your API key supports
+router.get('/test-models', async (req, res) => {
+    try {
+        const { GoogleGenerativeAI } = require('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+        // Note: The SDK doesn't have a direct listModels in the main class
+        // This is a manual check for common model names
+        const models = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro'];
+        const results = [];
+
+        for (const m of models) {
+            try {
+                const model = genAI.getGenerativeModel({ model: m });
+                await model.generateContent("test");
+                results.push({ model: m, status: "accessible" });
+            } catch (e: any) {
+                results.push({ model: m, status: "failed", error: e.message });
+            }
+        }
+        res.json({ results });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 export default router;
