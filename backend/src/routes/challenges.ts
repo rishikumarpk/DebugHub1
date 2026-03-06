@@ -175,6 +175,7 @@ router.get('/practice/:id/answer', async (req: any, res) => {
 
 // ===== PRACTICE MODE (Enhanced with LLM) =====
 router.get('/practice/generate', async (req: any, res) => {
+    console.log('[API] Practice generation requested by user:', req.user.userId);
     const userId = req.user.userId;
     const user = await prisma.user.findUnique({ where: { id: userId } });
 
