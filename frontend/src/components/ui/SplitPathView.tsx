@@ -27,7 +27,7 @@ export default function SplitPathView({ challengeId, attemptId, onClose }: Split
 
     // View toggles
     const [showHuman, setShowHuman] = useState(true);
-    const [showAI, setShowAI] = useState(false);
+    const [showAI, setShowAI] = useState(true);
     const [showExpert, setShowExpert] = useState(true);
 
     // Initial load
