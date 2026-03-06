@@ -32,7 +32,7 @@ Return strictly the JSON array, no markdown formatting.`;
 
     try {
         console.log(`[AI-Path] Generating for: ${bugType} in ${context}...`);
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -134,8 +134,8 @@ Return exactly a JSON object with the following fields:
 Return strictly the JSON object, no markdown formatting.`;
 
     try {
-        console.log(`[AI-Challenge] Generating a ${difficulty} ${language} challenge...`);
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+        console.log(`[AI-Challenge] Generating a ${difficulty} ${language} challenge with gemini-1.5-flash-latest...`);
+        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -182,7 +182,7 @@ Keep it under 2 sentences. Speak like an experienced on-call engineer advising a
 
     try {
         console.log(`[AI-Hint] Generating personalized hint for scenario...`);
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
