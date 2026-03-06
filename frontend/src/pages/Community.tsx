@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Search, ChevronDown, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Badge from '../components/ui/Badge';
-import { useAuthStore } from '../store/useAuthStore';
 import { API_URL } from '../config';
 import Button from '../components/ui/Button';
 

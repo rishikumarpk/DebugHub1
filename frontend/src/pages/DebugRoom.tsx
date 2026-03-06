@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_URL } from '../config';
-import { useAuthStore } from '../store/useAuthStore';
 import { Editor } from '@monaco-editor/react';
 import { Check, ShieldCheck, User as UserIcon, Loader2, ArrowLeft } from 'lucide-react';
 import Badge from '../components/ui/Badge';
