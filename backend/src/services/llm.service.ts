@@ -5,7 +5,10 @@ function getAi() {
     if (aiInstance) return aiInstance;
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
+        console.log(`[AI] Initializing Gemini with key length: ${apiKey.length}, starts with: ${apiKey.substring(0, 7)}...`);
         aiInstance = new GoogleGenerativeAI(apiKey);
+    } else {
+        console.error('[AI] CRITICAL: GEMINI_API_KEY is missing from environment variables!');
     }
     return aiInstance;
 }
