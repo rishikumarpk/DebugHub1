@@ -73,7 +73,7 @@ export default function Practice() {
                 setCode(data.data.buggyCode);
                 setDifficulty(data.data.difficulty);
             } else {
-                setError(data.error || 'Failed to generate challenge. Please try again.');
+                setError(data.details ? `${data.error}: ${data.details}` : (data.error || 'Failed to generate challenge. Please try again.'));
             }
         } catch (e: any) {
             console.error('Failed to fetch practice challenge', e);
