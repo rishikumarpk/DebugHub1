@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { User, Sparkles, Award } from 'lucide-react';
 import Button from './Button';
@@ -16,6 +16,48 @@ interface SplitPathViewProps {
     onClose: () => void;
 }
 
+const PathColumn = ({ title, steps, icon: Icon, color, isActive }: { title: string, steps: Step[], icon: React.ElementType, color: string, isActive: boolean }) => {
+    if (!isActive) return null;
+    return (
+        <div className="flex-1 flex flex-col border border-[#E0E0E04D] bg-[#030303] rounded-[8px] overflow-hidden min-w-[280px]">
+            <div className={`p-3 flex items-center gap-2 border-b border-[#E0E0E04D] shrink-0`} style={{ backgroundColor: `${color}1A` }}>
+                <Icon size={16} color={color} />
+                <span className="font-body font-bold text-[13px] text-[#E0E0E0] tracking-wide uppercase">{title}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+                {steps.map((step, idx) => (
+                    <div key={idx} className="relative pl-6">
+                        <div className="absolute left-0 top-1.5 w-3 h-3 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)] border-2 border-[#030303] z-10" style={{ backgroundColor: color }}></div>
+                        {idx !== steps.length - 1 && <div className="absolute left-1.5 top-3 w-px h-[calc(100%+16px)] bg-[#E0E0E033]"></div>}
+
+                        <h4 className="font-body text-[14px] font-semibold text-[#E0E0E0] mb-1">{step.action}</h4>
+                        <p className="font-body text-[13px] text-[#E0E0E073] leading-relaxed mb-3">{step.reasoning}</p>
+
+                        {step.codeState && (
+                            <div className="h-[120px] rounded-[6px] border border-[#E0E0E033] overflow-hidden">
+                                <Editor theme="vs-dark"
+                                    height="100%"
+                                    language="javascript"
+                                    value={step.codeState}
+                                    options={{
+                                        minimap: { enabled: false },
+                                        fontSize: 11,
+                                        fontFamily: "'JetBrains Mono', monospace",
+                                        readOnly: true,
+                                        scrollBeyondLastLine: false,
+                                        lineNumbers: 'off',
+                                        padding: { top: 8, bottom: 8 }
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 export default function SplitPathView({ challengeId, attemptId, onClose }: SplitPathViewProps) {
     const [paths, setPaths] = useState<{
         humanPath: Step[];
@@ -31,7 +73,7 @@ export default function SplitPathView({ challengeId, attemptId, onClose }: Split
     const [showExpert, setShowExpert] = useState(true);
 
     // Initial load
-    useState(() => {
+    useEffect(() => {
         fetch(`${API_URL}/api/ai/paths/${challengeId}/${attemptId}`, {
             credentials: 'include',
             headers: getAuthHeaders()
@@ -44,7 +86,7 @@ export default function SplitPathView({ challengeId, attemptId, onClose }: Split
             })
             .catch(err => console.error("Failed to fetch paths", err))
             .finally(() => setLoading(false));
-    });
+    }, [challengeId, attemptId]);
 
     if (loading) {
         return <div className="p-8 text-center text-[#E0E0E073] font-body bg-[#030303] rounded-[12px] border border-[#E0E0E080]">Loading analysis...</div>;
@@ -53,48 +95,6 @@ export default function SplitPathView({ challengeId, attemptId, onClose }: Split
     if (!paths) {
         return <div className="p-8 text-center text-[#E0E0E0] font-body bg-[#030303] rounded-[12px] border border-[#E0E0E080]">Failed to load path comparison.</div>;
     }
-
-    const PathColumn = ({ title, steps, icon: Icon, color, isActive }: { title: string, steps: Step[], icon: any, color: string, isActive: boolean }) => {
-        if (!isActive) return null;
-        return (
-            <div className="flex-1 flex flex-col border border-[#E0E0E04D] bg-[#030303] rounded-[8px] overflow-hidden min-w-[280px]">
-                <div className={`p-3 flex items-center gap-2 border-b border-[#E0E0E04D] shrink-0`} style={{ backgroundColor: `${color}1A` }}>
-                    <Icon size={16} color={color} />
-                    <span className="font-body font-bold text-[13px] text-[#E0E0E0] tracking-wide uppercase">{title}</span>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
-                    {steps.map((step, idx) => (
-                        <div key={idx} className="relative pl-6">
-                            <div className="absolute left-0 top-1.5 w-3 h-3 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)] border-2 border-[#030303] z-10" style={{ backgroundColor: color }}></div>
-                            {idx !== steps.length - 1 && <div className="absolute left-1.5 top-3 w-px h-[calc(100%+16px)] bg-[#E0E0E033]"></div>}
-
-                            <h4 className="font-body text-[14px] font-semibold text-[#E0E0E0] mb-1">{step.action}</h4>
-                            <p className="font-body text-[13px] text-[#E0E0E073] leading-relaxed mb-3">{step.reasoning}</p>
-
-                            {step.codeState && (
-                                <div className="h-[120px] rounded-[6px] border border-[#E0E0E033] overflow-hidden">
-                                    <Editor theme="vs-dark"
-                                        height="100%"
-                                        language="javascript"
-                                        value={step.codeState}
-                                        options={{
-                                            minimap: { enabled: false },
-                                            fontSize: 11,
-                                            fontFamily: "'JetBrains Mono', monospace",
-                                            readOnly: true,
-                                            scrollBeyondLastLine: false,
-                                            lineNumbers: 'off',
-                                            padding: { top: 8, bottom: 8 }
-                                        }}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    };
 
     return (
         <div className="w-full h-full max-h-[85vh] bg-[#030303] border border-[#E0E0E080] rounded-[16px] shadow-[0_24px_80px_rgba(0,0,0,0.6)] flex flex-col overflow-hidden animate-[fade-up_0.2s_ease-out]">

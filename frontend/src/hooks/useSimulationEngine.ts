@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getScenarioById } from '../data/incidents';
 import type { ActionSeverity, IncidentScenario, IncidentState, IncidentAlert } from '../data/incidents/types';
 
 export interface SimulationState {
@@ -36,7 +37,6 @@ export const useSimulationEngine = () => {
         setLoading(true);
         try {
             // In a real app we might fetch this. Here we import from our local data map
-            const { getScenarioById } = await import('../data/incidents');
             const scenario = getScenarioById(scenarioId);
             if (!scenario) throw new Error("Scenario not found");
 
@@ -55,7 +55,7 @@ export const useSimulationEngine = () => {
                 lastActionId: undefined,
                 lastActionSeverity: undefined
             });
-        } catch (e) {
+        } catch (e: any) {
             console.error("Failed to load scenario", e);
         } finally {
             setLoading(false);
@@ -67,7 +67,7 @@ export const useSimulationEngine = () => {
         if (loading || simState.isGameOver || !simState.currentState || !simState.scenario) return;
 
         const timer = setInterval(() => {
-            setSimState(prev => {
+            setSimState((prev: SimulationState) => {
                 if (prev.isGameOver || !prev.currentState || !prev.scenario) return prev;
 
                 const burnRate = prev.currentState.metrics.burnRatePerSec;
@@ -119,7 +119,7 @@ export const useSimulationEngine = () => {
     }, [loading, simState.isGameOver, simState.currentState, simState.scenario]);
 
     const takeAction = useCallback((actionId: string) => {
-        setSimState(prev => {
+        setSimState((prev: SimulationState) => {
             if (prev.isGameOver || !prev.scenario || !prev.currentState) return prev;
 
             const actionDef = prev.scenario.actions[actionId];
@@ -178,7 +178,7 @@ export const useSimulationEngine = () => {
     }, []);
 
     const dismissAlert = useCallback((alertId: string) => {
-        setSimState(prev => ({
+        setSimState((prev: SimulationState) => ({
             ...prev,
             activeAlerts: prev.activeAlerts.filter(a => a.id !== alertId)
         }));

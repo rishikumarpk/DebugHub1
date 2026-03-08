@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import { Dashboard } from './pages/Dashboard';
-import { Challenge } from './pages/Challenge';
+
 import { Community } from './pages/Community';
 import { Portfolio } from './pages/Portfolio';
 import { Login } from './pages/Login';
@@ -33,7 +33,7 @@ export default function App() {
     }
 
     const authToken = localStorage.getItem('auth_token');
-    const headers: any = {};
+    const headers: Record<string, string> = {};
     if (authToken) {
       headers['Authorization'] = `Bearer ${authToken}`;
     }
@@ -64,7 +64,7 @@ export default function App() {
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
         <Route path="/" element={user ? <Layout /> : <Navigate to="/login" replace />}>
           <Route index element={<Dashboard />} />
-          <Route path="daily-bug" element={<Challenge />} />
+          <Route path="daily-bug" element={<DailyChallengesTracker />} />
           <Route path="challenges" element={<DailyChallengesTracker />} />
           <Route path="community" element={<Community />} />
           <Route path="profile" element={<Portfolio />} />

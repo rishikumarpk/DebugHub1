@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authenticateJWT } from '../middleware/auth';
 import { PrismaClient } from '@prisma/client';
 import { generateAiDiagnosticPath, generatePersonalizedHint } from '../services/llm.service';
 

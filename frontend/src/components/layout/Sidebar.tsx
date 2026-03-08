@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Bug, MessageSquare, User, Bell, Settings, ChevronLeft, ChevronRight, Trophy, Zap, ShieldAlert } from 'lucide-react';
+import { Home, Bug, MessageSquare, User, Bell, Settings, ChevronLeft, ChevronRight, Zap, ShieldAlert } from 'lucide-react';
 
 const Sidebar = () => {
     const [collapsed, setCollapsed] = useState(true);
 
     const navItems = [
         { icon: <Home size={20} />, label: 'Home', path: '/' },
-        { icon: <Bug size={20} />, label: 'Daily Bug', path: '/daily-bug' },
+        { icon: <Bug size={20} />, label: 'Daily Bug', path: '/challenges' },
         { icon: <Zap size={20} />, label: 'Practice', path: '/practice' },
-        { icon: <Trophy size={20} />, label: 'Challenges', path: '/challenges' },
         { icon: <ShieldAlert size={20} />, label: 'Simulator', path: '/incidents' },
         { icon: <MessageSquare size={20} />, label: 'Community', path: '/community' },
         { icon: <User size={20} />, label: 'Profile', path: '/profile' },

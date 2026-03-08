@@ -20,12 +20,12 @@ export function Login() {
     };
 
     return (
-        <div className="w-full h-screen bg-black flex flex-col font-body relative overflow-hidden">
+        <div className="w-full min-h-screen bg-black flex flex-col font-body relative overflow-x-hidden overflow-y-auto">
             <div className="absolute inset-0 z-0">
-                <DottedSurface className="w-full h-full" />
+                <DottedSurface className="w-full min-h-full" />
             </div>
             {/* --- Content Overlay --- */}
-            <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
+            <div className="relative z-10 w-full min-h-screen flex flex-col items-center justify-start md:justify-center px-6 py-20 overflow-y-auto">
 
                 {/* Header Text - Centered to pull the eye into the tunnel */}
                 <div className="flex flex-col items-center text-center mb-16 animate-[fade-up_0.8s_ease-out]">

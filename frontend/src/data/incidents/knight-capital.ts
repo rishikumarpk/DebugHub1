@@ -21,7 +21,7 @@ export const knightCapitalScenario: IncidentScenario = {
             },
             logs: ["[INFO] All systems GO.", "[INFO] Standing by for market open."],
             availableActionIds: [],
-            autoTransition: { stateId: "S0", durationSeconds: 10 }
+            autoTransition: { stateId: "S0", durationSeconds: 3 }
         },
         "S0": {
             id: "S0",

@@ -14,7 +14,15 @@ model User {
   googleId          String?  @unique
   username          String   @unique
   avatarUrl         String?
+  bio               String?
   preferredLanguage String   @default("python") // python | java | cpp
+  editorFontSize    Int      @default(14)
+  autoShowSplitView Boolean  @default(false)
+  emailNotifs       Boolean  @default(true)
+  streakReminders   Boolean  @default(true)
+  communityNotifs   Boolean  @default(false)
+  publicProfile     Boolean  @default(true)
+  showStreak        Boolean  @default(true)
   createdAt         DateTime @default(now())
   streak            DebugStreak?
   attempts          ChallengeAttempt[]
@@ -25,7 +33,7 @@ model User {
 
 model DailyChallenge {
   id             String   @id @default(cuid())
-  date           DateTime
+  date           DateTime @unique
   type           String   @default("DEBUGGING") // DEBUGGING | CODE_REVIEW
   language       String
   bugType        String   // SYNTAX | LOGICAL | EDGE_CASE | PERFORMANCE | REAL_WORLD
@@ -41,7 +49,7 @@ model DailyChallenge {
   attempts       ChallengeAttempt[]
   diagnosticPaths DiagnosticPath[]
 
-  @@unique([date])
+  @@unique([date, language])
 }
 
 model PracticeChallenge {
@@ -57,12 +65,15 @@ model PracticeChallenge {
   hint2          String
   hint3          String
   issues         String?  // JSON array for CODE_REVIEW challenges
+  attempts       ChallengeAttempt[]
+  diagnosticPaths DiagnosticPath[]
 }
 
 model ChallengeAttempt {
   id          String   @id @default(cuid())
   userId      String
-  challengeId String
+  challengeId String?
+  practiceChallengeId String?
   solved      Boolean  @default(false)
   hintsUsed   Int      @default(0)
   timeTakenMs Int?
@@ -70,13 +81,15 @@ model ChallengeAttempt {
   totalIssues Int?     // for CODE_REVIEW
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id])
-  challenge   DailyChallenge @relation(fields: [challengeId], references: [id])
+  challenge   DailyChallenge? @relation(fields: [challengeId], references: [id])
+  practiceChallenge PracticeChallenge? @relation(fields: [practiceChallengeId], references: [id])
   diagnosticPath DiagnosticPath?
 }
 
 model DiagnosticPath {
   id             String   @id @default(cuid())
-  challengeId    String
+  challengeId    String?
+  practiceChallengeId String?
   userId         String?  // null if it's the official AI or Expert path
   attemptId      String?  @unique // if it's a human path
   pathType       String   // HUMAN | AI | EXPERT
@@ -84,7 +97,8 @@ model DiagnosticPath {
   matchScore     Int?     // for HUMAN paths: how well it matched the expert/AI path
   createdAt      DateTime @default(now())
   
-  challenge      DailyChallenge    @relation(fields: [challengeId], references: [id])
+  challenge      DailyChallenge?    @relation(fields: [challengeId], references: [id])
+  practiceChallenge PracticeChallenge? @relation(fields: [practiceChallengeId], references: [id])
   user           User?             @relation(fields: [userId], references: [id])
   attempt        ChallengeAttempt? @relation(fields: [attemptId], references: [id])
 }

@@ -22,6 +22,8 @@ export default function Simulator() {
     // Multiplayer Role State
     const [selectedRole, setSelectedRole] = useState<SimulationRole | null>(null);
     const [engineerTab, setEngineerTab] = useState<'LOGS' | 'RUNBOOK'>('LOGS');
+    const [showPostmortem, setShowPostmortem] = useState(false);
+    const [dynamicHint, setDynamicHint] = useState<string | null>(null);
 
     const {
         loading,
@@ -51,8 +53,6 @@ export default function Simulator() {
         }
     }, [scenarioId, loadScenario]);
 
-    const [showPostmortem, setShowPostmortem] = useState(false);
-    const [dynamicHint, setDynamicHint] = useState<string | null>(null);
 
     useEffect(() => {
         if (isGameOver && gameOverReason !== 'BANKRUPT') {
@@ -202,7 +202,7 @@ export default function Simulator() {
     }
 
     return (
-        <div className={`w-full h-[calc(100vh-48px)] flex flex-col overflow-hidden relative transition-colors duration-1000 ${isCritical && !isGameOver ? 'bg-[#DFFFDB]' : 'bg-[#DFFFDB]'} ${isCrash ? 'animate-[shake_0.5s_infinite]' : ''}`}>
+        <div className={`w-full h-[calc(100vh-48px)] flex flex-col overflow-hidden relative transition-colors duration-500 ${(isCritical || isCrash) && !isGameOver ? 'bg-[#1a0a0d]' : 'bg-[#DFFFDB]'} ${isCrash ? 'animate-[shake_0.5s_infinite]' : ''}`}>
             {/* Visual Urgency Overlay */}
             {isCritical && !isGameOver && !isCrash && (
                 <div className="absolute inset-0 pointer-events-none border-[4px] border-[#9D0A3680] animate-[pulse_2s_ease-in-out_infinite] z-0" />

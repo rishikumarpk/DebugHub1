@@ -1,6 +1,6 @@
 import React from 'react';
 
-type BadgeColor = 'python' | 'javascript' | 'java' | 'cpp' | 'go' | 'easy' | 'medium' | 'hard' | 'default';
+export type BadgeColor = 'python' | 'javascript' | 'java' | 'cpp' | 'go' | 'easy' | 'medium' | 'hard' | 'default';
 
 interface BadgeProps {
     color?: BadgeColor;

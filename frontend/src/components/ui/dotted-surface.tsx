@@ -132,8 +132,8 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 			material.dispose();
 			renderer.dispose();
 
-			if (containerRef.current && domElement) {
-				containerRef.current.removeChild(domElement);
+			if (domElement.parentNode) {
+				domElement.parentNode.removeChild(domElement);
 			}
 		};
 	}, []);

@@ -50,7 +50,7 @@ const plans = [
         cta: 'Get Pro',
         disabled: false,
         popular: true,
-        amountInPaise: 157900, // $19 ≈ ₹1579
+        amountInPaise: 99900,
     },
     {
         tier: 'Recruiter',
@@ -68,9 +68,9 @@ const plans = [
         color: '#F59E0B',
         gradient: 'linear-gradient(135deg, rgba(25,20,10,0.98) 0%, rgba(15,12,8,0.95) 100%)',
         borderColor: 'rgba(245,158,11,0.35)',
-        cta: 'Contact Sales',
+        cta: 'Get Recruiter',
         disabled: false,
-        amountInPaise: 1659900, // $199 ≈ ₹16599
+        amountInPaise: 499900,
     },
 ];
 
@@ -104,13 +104,6 @@ const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
 
     const handlePayment = (plan: typeof plans[0]) => {
         if (plan.disabled) return;
-
-        if (plan.tier === 'Recruiter') {
-            // For B2B, open a mailto or contact form
-            const salesEmail = import.meta.env.VITE_SALES_EMAIL || 'sales@debughub.io';
-            window.open(`mailto:${salesEmail}?subject=Recruiter Plan Inquiry`, '_blank');
-            return;
-        }
 
         if (!window.Razorpay) {
             alert('Payment gateway is loading. Please try again in a moment.');
@@ -152,7 +145,7 @@ const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
 
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
             style={{ animation: 'pricing-backdrop-in 0.3s ease-out forwards' }}
         >
             {/* Backdrop */}
@@ -164,19 +157,18 @@ const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
             {/* Modal */}
             <div
                 ref={modalRef}
-                className="relative z-10 w-full max-w-[960px] mx-4"
+                className="relative z-10 w-full max-w-[960px] bg-[#0A0A0A] rounded-3xl border border-[#E0E0E026] overflow-hidden shadow-2xl"
                 style={{ animation: 'pricing-modal-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
             >
-                {/* Close button */}
+                {/* Close button - now inside the modal for better visibility */}
                 <button
                     onClick={onClose}
-                    className="absolute -top-12 right-0 w-10 h-10 rounded-full border border-[#E0E0E033] bg-[#030303CC] flex items-center justify-center text-[#E0E0E0] hover:text-white hover:border-[#E0E0E066] transition-all z-20"
+                    className="absolute top-4 right-4 w-10 h-10 rounded-full border border-[#E0E0E026] bg-[#03030366] flex items-center justify-center text-[#E0E0E0] hover:text-white hover:bg-[#E0E0E026] transition-all z-20"
                 >
-                    <X size={18} />
+                    <X size={20} />
                 </button>
 
-                {/* Header */}
-                <div className="text-center mb-8">
+                <div className="p-8 md:p-12">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#A78BFA33] bg-[#A78BFA0D] mb-4">
                         <Crown size={14} className="text-[#A78BFA]" />
                         <span className="text-[12px] font-semibold text-[#A78BFA] uppercase tracking-widest">Upgrade</span>

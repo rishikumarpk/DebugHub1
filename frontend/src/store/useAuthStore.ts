@@ -5,6 +5,15 @@ interface User {
     username: string;
     email: string;
     avatarUrl?: string;
+    bio?: string;
+    preferredLanguage?: string;
+    autoShowSplitView?: boolean;
+    emailNotifs?: boolean;
+    streakReminders?: boolean;
+    communityNotifs?: boolean;
+    publicProfile?: boolean;
+    showStreak?: boolean;
+    editorFontSize?: number;
     streak?: { currentStreak: number; rhythmScore: number; longestStreak: number; avgReasoningScore?: number };
     stats?: { bugsFixed: number, reposHelped: number };
 }

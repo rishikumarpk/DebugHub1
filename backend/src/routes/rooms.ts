@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authenticateJWT } from '../middleware/auth';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
@@ -6,8 +7,13 @@ const prisma = new PrismaClient();
 
 // List all open rooms
 router.get('/', async (req, res) => {
+    const { language, status } = req.query;
     try {
         const rooms = await prisma.debugRoom.findMany({
+            where: {
+                ...(language && { language: String(language).toLowerCase() }),
+                ...(status && { status: String(status).toLowerCase() })
+            },
             include: {
                 creator: { select: { username: true, avatarUrl: true } },
                 _count: { select: { fixes: true } }

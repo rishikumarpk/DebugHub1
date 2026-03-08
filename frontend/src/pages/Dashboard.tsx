@@ -1,31 +1,70 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { GlassButton } from '../components/ui/liquid-glass';
 import Card from '../components/ui/Card';
+import { API_URL, getAuthHeaders } from '../config';
+
+interface Activity {
+    id: string;
+    user: string;
+    action: string;
+    time: string;
+    type: string;
+}
+
+interface LeaderboardItem {
+    rank: number;
+    name: string;
+    score: number;
+    barW: string;
+    isYou?: boolean;
+}
 
 export function Dashboard() {
     const { user } = useAuthStore();
     const streak = user?.streak || { currentStreak: 0, longestStreak: 0, rhythmScore: 0 };
 
-    const activities = [
-        { id: 1, user: '@alex', action: 'joined debug session', time: '2m ago', type: 'live' },
-        { id: 2, user: '@maya', action: 'posted new bug "React useEffect"', time: '15m ago', type: 'general' },
-        { id: 3, user: '@priya', action: 'solved today\'s challenge', time: '1h ago', type: 'solved' },
-        { id: 4, user: 'System', action: 'Your bug became Daily Challenge!', time: '3h ago', type: 'special' }
-    ];
+    const [activities, setActivities] = useState<Activity[]>([]);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
 
-    const leaderboard = [
-        { rank: 1, name: '@maya', score: 97, barW: 'w-[97%]' },
-        { rank: 2, name: '@you', score: streak.rhythmScore, barW: `w-[${streak.rhythmScore}%]`, isYou: true },
-        { rank: 3, name: '@raj', score: 71, barW: 'w-[71%]' },
-        { rank: 4, name: '@sam', score: 68, barW: 'w-[68%]' },
-    ];
+    useEffect(() => {
+        // Fetch Activities
+        fetch(`${API_URL}/api/challenges/activity`, {
+            credentials: 'include',
+            headers: getAuthHeaders()
+        })
+            .then(r => r.json())
+            .then(d => { if (d.success) setActivities(d.data); })
+            .catch(e => console.error('Activity fetch failed', e));
+
+        // Fetch Leaderboard
+        fetch(`${API_URL}/api/challenges/leaderboard`, {
+            credentials: 'include',
+            headers: getAuthHeaders()
+        })
+            .then(r => r.json())
+            .then(d => { if (d.success) setLeaderboard(d.data); })
+            .catch(e => console.error('Leaderboard fetch failed', e));
+    }, []);
+
+    const formatTime = (dateStr: string) => {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) return 'just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+        return `${Math.floor(diffHours / 24)}d ago`;
+    };
 
     return (
-        <div className="w-full h-[calc(100vh-48px)] overflow-y-auto snap-y snap-mandatory bg-[#030303] custom-scrollbar">
+        <div className="w-full min-h-[calc(100vh-48px)] overflow-y-auto bg-[#030303] custom-scrollbar">
 
-            {/* HERO SECTION - 100vh Fill */}
-            <div className="w-full h-full min-h-[500px] flex items-center justify-center relative snap-start overflow-hidden">
+            {/* HERO SECTION - Dynamic height */}
+            <div className="w-full min-h-[600px] h-[calc(100vh-48px)] flex items-center justify-center relative snap-start overflow-hidden">
                 {/* Background Video */}
                 <video
                     autoPlay
@@ -41,7 +80,7 @@ export function Dashboard() {
                 <div className="relative z-10 w-full max-w-[800px] px-6 flex flex-col items-center text-center animate-[fade-up_0.8s_ease-out]">
 
 
-                    <h1 className="font-display text-[56px] md:text-[72px] font-bold text-[#E0E0E0] leading-[1.1] mb-12 drop-shadow-[0_0_40px_rgba(139,92,246,0.4)]">
+                    <h1 className="font-display text-[40px] md:text-[72px] font-bold text-[#E0E0E0] leading-[1.1] mb-12 drop-shadow-[0_0_40px_rgba(139,92,246,0.4)]">
                         Ready to Debug?
                     </h1>
 
@@ -88,7 +127,7 @@ export function Dashboard() {
                     <div className="flex flex-col w-full bg-[#030303F2] p-6 rounded-[16px] border border-[#E0E0E033]">
                         <h3 className="font-body font-semibold text-[16px] text-[#E0E0E0] mb-6 uppercase tracking-widest pl-2 border-l-[3px] border-[#E0E0E0]">Recent Activity</h3>
                         <div className="flex flex-col gap-4">
-                            {activities.map((act) => {
+                            {activities.map((act: Activity) => {
                                 let dotColor = 'bg-[#E0E0E0]';
                                 if (act.type === 'live') dotColor = 'bg-[#E0E0E0] shadow-[0_0_8px_#E0E0E0]';
                                 if (act.type === 'solved' || act.type === 'special') dotColor = 'bg-[#E0E0E0]';
@@ -100,7 +139,7 @@ export function Dashboard() {
                                             <span className="text-[#E0E0E0] font-semibold mr-1.5">{act.user}</span>
                                             <span className="opacity-80">{act.action}</span>
                                         </div>
-                                        <div className="text-[12px] font-code text-[#E0E0E066] shrink-0">{act.time}</div>
+                                        <div className="text-[12px] font-code text-[#E0E0E066] shrink-0">{formatTime(act.time)}</div>
                                     </div>
                                 );
                             })}
@@ -111,7 +150,7 @@ export function Dashboard() {
                     <div className="flex flex-col w-full bg-[#030303F2] p-6 rounded-[16px] border border-[#E0E0E033]">
                         <h3 className="font-body font-semibold text-[16px] text-[#E0E0E0] mb-6 uppercase tracking-widest pl-2 border-l-[3px] border-[#E0E0E0]">Rhythm Leaderboard</h3>
                         <div className="flex flex-col gap-5">
-                            {leaderboard.map((item) => (
+                            {leaderboard.map((item: LeaderboardItem) => (
                                 <div key={item.rank} className="flex flex-col gap-1.5 group cursor-pointer">
                                     <div className="flex justify-between items-center text-[14px]">
                                         <div className={`font-semibold font-body ${item.isYou ? 'text-[#E0E0E0]' : 'text-[#E0E0E0] group-hover:text-[#E0E0E0] transition-colors'}`}>

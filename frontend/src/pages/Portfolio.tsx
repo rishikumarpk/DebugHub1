@@ -1,48 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
-
-// Mock Data from the prompt
-const MOCK_DATA = {
-    username: "DemoUser",
-    badge: "Founding Debugger 🏅",
-    joinDate: "Feb 2026",
-    specialty: "Python specialist",
-    streak: 42,
-    longestStreak: 67,
-    rhythmScore: 84,
-    rhythmPercentile: 18,
-    bugsFixed: 128,
-    reposHelped: 12,
-    languages: [
-        { name: "Python", count: 47, percent: 80 },
-        { name: "JavaScript", count: 23, percent: 45 },
-        { name: "Java", count: 8, percent: 15 },
-    ],
-    bugTypes: {
-        Syntax: 72,
-        Logical: 88,
-        EdgeCase: 45,
-        Performance: 30,
-        RealWorld: 61,
-    },
-    trustScore: 847,
-    trustPercentile: 12,
-    solutionsAccepted: 34,
-    upvotesReceived: 128,
-    bugsWentDaily: 9,
-    timeline: [
-        { type: "milestone", date: "Feb 18", title: "STREAK STARTED", text: "First daily bug solved. Streak begins.", color: "warning" },
-        { type: "regular", date: "Feb 19", text: "Daily challenge solved", lang: "Python", bugType: "Syntax", trust: 5 },
-        { type: "regular", date: "Feb 20", text: "Helped @raj with JS bug session", lang: "JS", bugType: "Logical", trust: 10 },
-        { type: "regular", date: "Feb 21", text: "Fixed Python edge case", lang: "Python", bugType: "Edge Case", trust: 5 },
-        { type: "milestone", date: "Feb 21", title: "FIRST PATCH APPLIED", text: "@maya applied your fix to their local project.", color: "success" },
-    ],
-    replays: [
-        { date: "Feb 21", lang: "Python", time: "1m 42s", hints: 1 },
-        { date: "Feb 20", lang: "JS", time: "3m 11s", hints: 0 },
-        { date: "Feb 19", lang: "Python", time: "2m 05s", hints: 2 },
-    ]
-};
+import { API_URL, getAuthHeaders } from '../config';
 
 const NumberCounter = ({ end, duration = 800 }: { end: number, duration?: number }) => {
     const [count, setCount] = useState(0);
@@ -203,16 +161,75 @@ const RadarChart = ({ data }: { data: Record<string, number> }) => {
     );
 };
 
+interface UserProfile {
+    username: string;
+    badge: string;
+    specialty: string;
+    joinDate: string;
+    streak: number;
+    longestStreak: number;
+    rhythmScore: number;
+    bugsFixed: number;
+    reposHelped: number;
+    trustScore: number;
+    trustPercentile: number;
+    solutionsAccepted: number;
+    upvotesReceived: number;
+    bugsWentDaily: number;
+    languages: Array<{ name: string; count: number; percent: number }>;
+    bugTypes: Record<string, number>;
+    timeline: Array<{ type: string; date: string; title?: string; text: string; color?: string; lang?: string; bugType?: string; trust?: number }>;
+    replays: Array<{ date: string; lang: string; time: string; hints: number }>;
+}
+
 export function Portfolio() {
     const { user } = useAuthStore();
-    const data = MOCK_DATA;
+    const [profileData, setProfileData] = useState<UserProfile | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        fetch(`${API_URL}/api/users/profile`, {
+            headers: getAuthHeaders(),
+            credentials: 'include'
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) setProfileData(d.data);
+                setLoading(false);
+            })
+            .catch(e => {
+                console.error('Profile fetch failed', e);
+                setLoading(false);
+            });
+    }, []);
+
+    if (loading) return (
+        <div className="w-full h-screen flex items-center justify-center bg-[#030303] text-[#E0E0E0]">
+            <div className="animate-pulse font-display text-xl">loading nexus profile...</div>
+        </div>
+    );
+
+    if (!profileData) return (
+        <div className="w-full h-screen flex items-center justify-center bg-[#030303] text-[#E0E0E0]">
+            <div className="font-display text-xl">profile initialization failed. check uplink.</div>
+        </div>
+    );
+
+    const data = profileData;
+    const stats = { bugsFixed: data.bugsFixed, reposHelped: data.reposHelped };
+    const streak = {
+        currentStreak: data.streak,
+        longestStreak: data.longestStreak,
+        rhythmScore: data.rhythmScore,
+        avgReasoningScore: 0
+    };
 
     return (
         <div className="w-full max-w-[1280px] mx-auto min-h-screen pb-20 font-body">
 
             {/* Inject dynamic language animations here */}
             <style>
-                {data.languages.map((lang, idx) => `
+                {(data.languages as Array<{ name: string, count: number, percent: number }>).map((lang, idx) => `
                     .lang-bar-${idx} { animation: growBar${idx} 1s ease-out ${idx * 100}ms forwards; }
                     @keyframes growBar${idx} { to { width: ${lang.percent}%; } }
                 `).join('\n')}
@@ -252,7 +269,7 @@ export function Portfolio() {
                 </div>
 
                 <div className="relative z-10 shrink-0 mt-6 md:mt-0 self-center md:self-start md:pt-4">
-                    <button className="bg-[#E0E0E0] text-[#E0E0E0] font-body font-semibold text-[14px] h-[40px] px-6 rounded-[16px] transition-all duration-200 hover:bg-[#E0E0E0] hover:shadow-[0_0_20px_rgba(224, 224, 224,0.4)]">
+                    <button className="bg-[#E0E0E0] text-[#030303] font-body font-semibold text-[14px] h-[40px] px-6 rounded-[16px] transition-all duration-200 hover:bg-[#E0E0E0] hover:shadow-[0_0_20px_rgba(224, 224, 224,0.4)]">
                         ↗ Share Profile
                     </button>
                 </div>
@@ -260,30 +277,29 @@ export function Portfolio() {
 
             {/* SECTION 2 — STAT CARDS ROW */}
             <div className="profile-stats grid grid-cols-2 lg:grid-cols-4 gap-6 px-6 md:px-14 py-8">
-                {/* Card 1: Streak */}
                 <div className="card text-center flex flex-col justify-center">
-                    <div className="font-display text-[48px] font-bold text-[#E0E0E0] leading-none mb-1"><NumberCounter end={user?.streak?.currentStreak || 0} /></div>
+                    <div className="font-display text-[48px] font-bold text-[#E0E0E0] leading-none mb-1"><NumberCounter end={streak.currentStreak} /></div>
                     <div className="font-body text-[11px] text-[rgba(222,222,221,0.45)] uppercase tracking-[0.1em]">STREAK</div>
-                    <div className="font-body text-[12px] text-[#E0E0E0] mt-1">+{(user?.streak?.currentStreak || 0) > 0 ? '1' : '0'} today</div>
+                    <div className="font-body text-[12px] text-[#E0E0E0] mt-1">+{streak.currentStreak > 0 ? '1' : '0'} today</div>
                 </div>
 
                 {/* Card 2: Rhythm */}
                 <div className="card text-center flex flex-col justify-center pb-4 pt-4">
-                    <RhythmRing score={data.rhythmScore} />
+                    <RhythmRing score={streak.rhythmScore} />
                     <div className="font-body text-[11px] text-[rgba(222,222,221,0.45)] uppercase tracking-[0.1em] mt-2">RHYTHM</div>
-                    <div className="font-body text-[12px] text-[#E0E0E0] mt-1">Top {data.rhythmPercentile}%</div>
+                    <div className="font-body text-[12px] text-[#E0E0E0] mt-1">Consistency Score</div>
                 </div>
 
                 {/* Card 3: Bugs Fixed */}
                 <div className="card text-center flex flex-col justify-center">
-                    <div className="font-display text-[48px] font-bold text-[#E0E0E0] leading-none mb-1"><NumberCounter end={data.bugsFixed} /></div>
+                    <div className="font-display text-[48px] font-bold text-[#E0E0E0] leading-none mb-1"><NumberCounter end={stats.bugsFixed} /></div>
                     <div className="font-body text-[11px] text-[rgba(222,222,221,0.45)] uppercase tracking-[0.1em]">BUGS FIXED</div>
                     <div className="font-body text-[12px] text-[#E0E0E0] mt-1">all time</div>
                 </div>
 
                 {/* Card 4: Repos Helped */}
                 <div className="card text-center flex flex-col justify-center">
-                    <div className="font-display text-[48px] font-bold text-[#E0E0E0] leading-none mb-1"><NumberCounter end={data.reposHelped} /></div>
+                    <div className="font-display text-[48px] font-bold text-[#E0E0E0] leading-none mb-1"><NumberCounter end={stats.reposHelped} /></div>
                     <div className="font-body text-[11px] text-[rgba(222,222,221,0.45)] uppercase tracking-[0.1em]">REPOS HELPED</div>
                     <div className="font-body text-[12px] text-[#E0E0E0] mt-1">all time</div>
                 </div>

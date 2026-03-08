@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, ChevronDown, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronDown, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Badge from '../components/ui/Badge';
 import { API_URL, getAuthHeaders } from '../config';
@@ -7,19 +7,44 @@ import Button from '../components/ui/Button';
 
 import CreateRoomModal from '../components/community/CreateRoomModal';
 
+interface Room {
+    id: string;
+    title: string;
+    summary: string;
+    language: string;
+    difficulty: string;
+    status: string;
+    buggyCode: string;
+    creatorId: string;
+    creator: {
+        username: string;
+        avatarUrl?: string;
+    };
+    _count?: {
+        fixes: number;
+    };
+}
+
 export function Community() {
-    const [rooms, setRooms] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+    const [searchQuery] = useState<string>('');
+    const [filterLanguage, setFilterLanguage] = useState('ALL');
+    const [filterStatus, setFilterStatus] = useState('ALL');
 
     useEffect(() => {
         fetchRooms();
-    }, []);
+    }, [filterLanguage, filterStatus]);
 
     const fetchRooms = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/api/rooms`, {
+            const params = new URLSearchParams();
+            if (filterLanguage !== 'ALL') params.append('language', filterLanguage);
+            if (filterStatus !== 'ALL') params.append('status', filterStatus);
+
+            const res = await fetch(`${API_URL}/api/rooms?${params.toString()}`, {
                 credentials: 'include',
                 headers: getAuthHeaders()
             });
@@ -33,31 +58,49 @@ export function Community() {
         setLoading(false);
     };
 
+    const filteredRooms = rooms.filter((room: Room) =>
+        room.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        room.summary.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <div className="w-full max-w-[900px] mx-auto p-8 flex flex-col gap-6">
 
             {/* Topbar Feed Controls */}
-            <div className="flex items-center gap-4 border-b border-[#E0E0E026] pb-6">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#E0E0E073]" size={16} />
-                    <input
-                        type="text"
-                        placeholder="Search bugs..."
-                        className="w-full bg-[#030303F2] border border-[#E0E0E040] rounded-[8px] py-2 pl-10 pr-4 text-[14px] text-[#E0E0E0] placeholder-[#E0E0E073] focus:outline-none focus:border-[#E0E0E0]"
-                    />
+            <div className="flex flex-col md:flex-row md:items-center gap-4 border-b border-[#E0E0E026] pb-6">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-2 border border-[#E0E0E040] rounded-[8px] bg-[#03030333] px-3 py-2 cursor-pointer hover:bg-[#03030366] transition-colors relative group">
+                        <select
+                            value={filterLanguage}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterLanguage(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                        >
+                            <option value="ALL">All Languages</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="python">Python</option>
+                            <option value="cpp">C++</option>
+                            <option value="java">Java</option>
+                        </select>
+                        <span className="text-[13px] text-[#E0E0E0]">{filterLanguage === 'ALL' ? 'Language' : filterLanguage.toUpperCase()}</span>
+                        <ChevronDown size={14} className="text-[#E0E0E073]" />
+                    </div>
+
+                    <div className="flex items-center gap-2 border border-[#E0E0E040] rounded-[8px] bg-[#03030333] px-3 py-2 cursor-pointer hover:bg-[#03030366] transition-colors relative">
+                        <select
+                            value={filterStatus}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterStatus(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                        >
+                            <option value="ALL">All Status</option>
+                            <option value="open">Open</option>
+                            <option value="solved">Solved</option>
+                        </select>
+                        <span className="text-[13px] text-[#E0E0E0]">{filterStatus === 'ALL' ? 'Status' : filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}</span>
+                        <ChevronDown size={14} className="text-[#E0E0E073]" />
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-2 border border-[#E0E0E040] rounded-[8px] bg-[#03030333] px-3 py-2 cursor-pointer hover:bg-[#03030366] transition-colors">
-                    <span className="text-[13px] text-[#E0E0E0]">Language</span>
-                    <ChevronDown size={14} className="text-[#E0E0E073]" />
-                </div>
-
-                <div className="flex items-center gap-2 border border-[#E0E0E040] rounded-[8px] bg-[#03030333] px-3 py-2 cursor-pointer hover:bg-[#03030366] transition-colors">
-                    <span className="text-[13px] text-[#E0E0E0]">Status</span>
-                    <ChevronDown size={14} className="text-[#E0E0E073]" />
-                </div>
-
-                <div className="ml-auto flex items-center gap-2">
+                <div className="flex items-center gap-2">
                     <Button variant="cta" className="text-[13px] py-2 flex items-center gap-1" onClick={() => setShowCreateModal(true)}>
                         <Plus size={16} /> Create Debug Room
                     </Button>
@@ -67,8 +110,8 @@ export function Community() {
             {/* Post Feed */}
             <div className="flex flex-col gap-4">
                 {loading && <div className="text-center text-[#E0E0E073] py-8">Loading rooms...</div>}
-                {!loading && rooms.length === 0 && <div className="text-center text-[#E0E0E073] py-8">No open debug rooms yet. Be the first to ask for help!</div>}
-                {!loading && rooms.map(post => {
+                {!loading && filteredRooms.length === 0 && <div className="text-center text-[#E0E0E073] py-8">No matching debug rooms found.</div>}
+                {!loading && filteredRooms.map((post: Room) => {
                     let statusClass = '';
                     let statusLabel = '';
                     const st = post.status.toLowerCase();
@@ -86,12 +129,12 @@ export function Community() {
                     return (
                         <div key={post.id} className="post-card p-5 bg-[#03030366] border border-[#E0E0E033] rounded-[12px] hover:border-[#E0E0E080] hover:bg-[#03030399] transition-all flex flex-col gap-3">
                             <div className="flex items-center gap-3">
-                                <Badge color={post.language as any}>{post.language.toUpperCase()}</Badge>
-                                <Badge color={post.difficulty as any}>{post.difficulty.toUpperCase()}</Badge>
+                                <Badge color={post.language.toLowerCase() as any}>{post.language.toUpperCase()}</Badge>
+                                <Badge color={post.difficulty.toLowerCase() as any}>{post.difficulty.toUpperCase()}</Badge>
                                 <div className={`px-2 py-[2px] rounded-[20px] text-[11px] font-bold border ${statusClass}`}>
                                     {statusLabel}
                                 </div>
-                                {post._count?.fixes > 0 && (
+                                {post._count && post._count.fixes > 0 && (
                                     <div className="ml-auto text-[12px] text-[#E0E0E073]">
                                         {post._count.fixes} suggestions
                                     </div>

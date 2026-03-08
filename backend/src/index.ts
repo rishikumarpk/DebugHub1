@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -38,7 +38,8 @@ app.use(passport.initialize());
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || 'mock',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'mock',
-    callbackURL: process.env.GOOGLE_CALLBACK_URL || (process.env.NODE_ENV === 'production' ? '/auth/google/callback' : 'http://localhost:3001/auth/google/callback')
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || (process.env.NODE_ENV === 'production' ? '/auth/google/callback' : 'http://localhost:3001/auth/google/callback'),
+    proxy: true
 },
     async (accessToken, refreshToken, profile, done) => {
         try {
@@ -108,28 +109,8 @@ app.get('/auth/google/callback',
     }
 );
 
-// Auth Middleware
-export const authenticateJWT = (req: any, res: any, next: any) => {
-    let token = req.cookies.token;
-
-    // Also check Authorization header
-    if (!token && req.headers.authorization) {
-        const parts = req.headers.authorization.split(' ');
-        if (parts.length === 2 && parts[0] === 'Bearer') {
-            token = parts[1];
-        }
-    }
-
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-
-    jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-        if (err) return res.status(403).json({ error: 'Forbidden' });
-        req.user = user;
-        next();
-    });
-};
-
-app.get('/auth/me', authenticateJWT, async (req: any, res: any) => {
+import { authenticateJWT } from './middleware/auth';
+app.get('/auth/me', authenticateJWT, async (req: Request | any, res: Response) => {
     const userId = req.user.userId;
     const user = await prisma.user.findUnique({
         where: { id: userId }
@@ -140,7 +121,100 @@ app.get('/auth/me', authenticateJWT, async (req: any, res: any) => {
     const { getValidStreak } = require('./services/streak.service');
     const streak = await getValidStreak(userId);
 
-    res.json({ success: true, data: { ...user, streak } });
+    const bugsFixed = await prisma.challengeAttempt.count({
+        where: { userId, solved: true }
+    });
+
+    res.json({ success: true, data: { ...user, streak, stats: { bugsFixed, reposHelped: 0 } } });
+});
+
+app.get('/api/users/profile', authenticateJWT, async (req: Request | any, res: Response) => {
+    const userId = req.user.userId;
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { streak: true }
+        });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Aggregate languages and bug types from solved attempts
+        const solvedAttempts = await prisma.challengeAttempt.findMany({
+            where: { userId, solved: true },
+            include: {
+                challenge: { select: { language: true, bugType: true } },
+                practiceChallenge: { select: { language: true, bugType: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const langMap: Record<string, number> = {};
+        const bugTypeMap: Record<string, number> = { Syntax: 0, Logical: 0, EdgeCase: 0, Performance: 0, RealWorld: 0 };
+
+        solvedAttempts.forEach(a => {
+            const lang = a.challenge?.language || a.practiceChallenge?.language || 'unknown';
+            const bType = a.challenge?.bugType || a.practiceChallenge?.bugType || 'Logical';
+            langMap[lang] = (langMap[lang] || 0) + 1;
+
+            // Map common bug types or standardize
+            const normalizedBType = bType.toUpperCase();
+            if (normalizedBType.includes('SYNTAX')) bugTypeMap.Syntax++;
+            else if (normalizedBType.includes('LOGICAL')) bugTypeMap.Logical++;
+            else if (normalizedBType.includes('EDGE')) bugTypeMap.EdgeCase++;
+            else if (normalizedBType.includes('PERF')) bugTypeMap.Performance++;
+            else bugTypeMap.RealWorld++;
+        });
+
+        const languages = Object.entries(langMap).map(([name, count]) => ({
+            name: name.charAt(0).toUpperCase() + name.slice(1),
+            count,
+            percent: Math.min(Math.floor((count / (solvedAttempts.length || 1)) * 100), 100)
+        })).sort((a, b) => b.count - a.count);
+
+        // Timeline
+        const timeline = solvedAttempts.slice(0, 5).map(a => ({
+            type: "regular",
+            date: a.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            text: a.challengeId ? "Daily challenge solved" : "Practice challenge solved",
+            lang: a.challenge?.language || a.practiceChallenge?.language || '?',
+            bugType: a.challenge?.bugType || a.practiceChallenge?.bugType || '?',
+            trust: 5
+        }));
+
+        // Replays
+        const replays = solvedAttempts.slice(0, 5).map(a => ({
+            date: a.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            lang: a.challenge?.language || a.practiceChallenge?.language || '?',
+            time: a.timeTakenMs ? `${Math.floor(a.timeTakenMs / 60000)}m ${Math.floor((a.timeTakenMs % 60000) / 1000)}s` : '?',
+            hints: a.hintsUsed
+        }));
+
+        const profileData = {
+            username: user.username,
+            avatarUrl: user.avatarUrl,
+            joinDate: user.createdAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            badge: "DebugHub Member 🏅",
+            specialty: languages[0]?.name ? `${languages[0].name} specialist` : "Aspiring Debugger",
+            streak: user.streak?.currentStreak || 0,
+            longestStreak: user.streak?.longestStreak || 0,
+            rhythmScore: user.streak?.rhythmScore || 0,
+            rhythmPercentile: 25,
+            bugsFixed: solvedAttempts.length,
+            reposHelped: 0,
+            languages,
+            bugTypes: bugTypeMap,
+            trustScore: (user.streak?.rhythmScore || 0) * 10 + solvedAttempts.length * 5,
+            trustPercentile: 15,
+            solutionsAccepted: solvedAttempts.length,
+            upvotesReceived: 0,
+            bugsWentDaily: 0,
+            timeline,
+            replays
+        };
+
+        res.json({ success: true, data: profileData });
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
+    }
 });
 
 // Mock Login for local dev if google auth isn't configured
@@ -171,18 +245,46 @@ app.post('/auth/logout', (req, res) => {
 });
 
 // User Preferences
-app.patch('/api/preferences', authenticateJWT, async (req: any, res: any) => {
-    const { preferredLanguage } = req.body;
+app.patch('/api/preferences', authenticateJWT, async (req: Request | any, res: Response) => {
+    const {
+        username,
+        bio,
+        preferredLanguage,
+        editorFontSize,
+        autoShowSplitView,
+        emailNotifs,
+        streakReminders,
+        communityNotifs,
+        publicProfile,
+        showStreak
+    } = req.body;
+
     const validLanguages = ['python', 'java', 'cpp'];
     if (preferredLanguage && !validLanguages.includes(preferredLanguage)) {
         return res.status(400).json({ error: `Invalid language. Choose from: ${validLanguages.join(', ')}` });
     }
-    const updated = await prisma.user.update({
-        where: { id: req.user.userId },
-        data: { ...(preferredLanguage && { preferredLanguage }) },
-        include: { streak: true }
-    });
-    res.json({ success: true, data: updated });
+
+    try {
+        const updated = await prisma.user.update({
+            where: { id: req.user.userId },
+            data: {
+                ...(username && { username }),
+                ...(bio !== undefined && { bio }),
+                ...(preferredLanguage && { preferredLanguage }),
+                ...(editorFontSize && { editorFontSize: Number(editorFontSize) }),
+                ...(autoShowSplitView !== undefined && { autoShowSplitView }),
+                ...(emailNotifs !== undefined && { emailNotifs }),
+                ...(streakReminders !== undefined && { streakReminders }),
+                ...(communityNotifs !== undefined && { communityNotifs }),
+                ...(publicProfile !== undefined && { publicProfile }),
+                ...(showStreak !== undefined && { showStreak })
+            },
+            include: { streak: true }
+        });
+        res.json({ success: true, data: updated });
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
+    }
 });
 
 // Public AI Routes (No JWT needed for simulator hints)

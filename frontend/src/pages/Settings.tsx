@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_URL, getAuthHeaders } from '../config';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSettingsStore } from '../store/useSettingsStore';
@@ -6,27 +6,60 @@ import { Save, User, Code, Bell, Shield, Trash2 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
+const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
+    <button
+        onClick={() => onChange(!checked)}
+        className={`relative w-11 h-6 rounded-full transition-colors ${checked ? 'bg-[#E0E0E0]' : 'bg-[#030303]'}`}
+    >
+        <div className={`absolute top-1 w-4 h-4 rounded-full bg-[#E0E0E0] transition-transform ${checked ? 'left-6' : 'left-1'}`} />
+    </button>
+);
+
+const SectionHeader = ({ icon: Icon, title, color }: { icon: React.ElementType; title: string; color: string }) => (
+    <div className="flex items-center gap-3 mb-6">
+        <div className="w-8 h-8 rounded-[8px] flex items-center justify-center" style={{ backgroundColor: `${color}1A` }}>
+            <Icon size={16} color={color} />
+        </div>
+        <h3 className="font-body font-semibold text-[16px] text-[#E0E0E0] uppercase tracking-wider">{title}</h3>
+    </div>
+);
+
 export default function Settings() {
     const { user } = useAuthStore();
     const [saved, setSaved] = useState(false);
 
     // Profile
     const [username, setUsername] = useState(user?.username || '');
-    const [bio, setBio] = useState('');
+    const [bio, setBio] = useState(user?.bio || '');
 
     // Preferences
     const { editorFontSize, setEditorFontSize } = useSettingsStore();
-    const [defaultLanguage, setDefaultLanguage] = useState((user as any)?.preferredLanguage || 'python');
-    const [autoShowSplitView, setAutoShowSplitView] = useState(false);
+    const [defaultLanguage, setDefaultLanguage] = useState(user?.preferredLanguage || 'python');
+    const [autoShowSplitView, setAutoShowSplitView] = useState(user?.autoShowSplitView || false);
 
     // Notifications
-    const [emailNotifs, setEmailNotifs] = useState(true);
-    const [streakReminders, setStreakReminders] = useState(true);
-    const [communityNotifs, setCommunityNotifs] = useState(false);
+    const [emailNotifs, setEmailNotifs] = useState(user?.emailNotifs ?? true);
+    const [streakReminders, setStreakReminders] = useState(user?.streakReminders ?? true);
+    const [communityNotifs, setCommunityNotifs] = useState(user?.communityNotifs ?? false);
 
     // Privacy
-    const [publicProfile, setPublicProfile] = useState(true);
-    const [showStreak, setShowStreak] = useState(true);
+    const [publicProfile, setPublicProfile] = useState(user?.publicProfile ?? true);
+    const [showStreak, setShowStreak] = useState(user?.showStreak ?? true);
+
+    useEffect(() => {
+        if (user) {
+            setUsername(user.username || '');
+            setBio(user.bio || '');
+            setDefaultLanguage(user.preferredLanguage || 'python');
+            setAutoShowSplitView(user.autoShowSplitView || false);
+            setEmailNotifs(user.emailNotifs ?? true);
+            setStreakReminders(user.streakReminders ?? true);
+            setCommunityNotifs(user.communityNotifs ?? false);
+            setPublicProfile(user.publicProfile ?? true);
+            setShowStreak(user.showStreak ?? true);
+            if (user.editorFontSize) setEditorFontSize(user.editorFontSize as any);
+        }
+    }, [user]);
 
     const handleSave = async () => {
         try {
@@ -36,36 +69,31 @@ export default function Settings() {
                     'Content-Type': 'application/json',
                     ...getAuthHeaders()
                 },
-                body: JSON.stringify({ preferredLanguage: defaultLanguage }),
+                body: JSON.stringify({
+                    username,
+                    bio,
+                    preferredLanguage: defaultLanguage,
+                    editorFontSize,
+                    autoShowSplitView,
+                    emailNotifs,
+                    streakReminders,
+                    communityNotifs,
+                    publicProfile,
+                    showStreak
+                }),
                 credentials: 'include'
             });
-            const data = await res.json();
+            const data = (await res.json()) as { success: boolean; data: any };
             if (data.success) {
                 setSaved(true);
+                // Also update local store if applicable
+                // (useAuthStore should ideally be updated here, or re-fetch me)
                 setTimeout(() => setSaved(false), 2000);
             }
         } catch (e) {
             console.error('Failed to save preferences', e);
         }
     };
-
-    const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
-        <button
-            onClick={() => onChange(!checked)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${checked ? 'bg-[#E0E0E0]' : 'bg-[#030303]'}`}
-        >
-            <div className={`absolute top-1 w-4 h-4 rounded-full bg-[#E0E0E0] transition-transform ${checked ? 'left-6' : 'left-1'}`} />
-        </button>
-    );
-
-    const SectionHeader = ({ icon: Icon, title, color }: { icon: any; title: string; color: string }) => (
-        <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-[8px] flex items-center justify-center" style={{ backgroundColor: `${color}1A` }}>
-                <Icon size={16} color={color} />
-            </div>
-            <h3 className="font-body font-semibold text-[16px] text-[#E0E0E0] uppercase tracking-wider">{title}</h3>
-        </div>
-    );
 
     return (
         <div className="w-full max-w-[800px] mx-auto p-8 animate-[fade-up_0.5s_ease-out]">
@@ -88,7 +116,7 @@ export default function Settings() {
                         <input
                             type="text"
                             value={username}
-                            onChange={e => setUsername(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                             className="bg-[#030303] border border-[#E0E0E033] rounded-[8px] px-4 py-3 text-[14px] text-[#E0E0E0] font-body focus:outline-none focus:border-[#E0E0E0] transition-colors"
                         />
                     </div>
@@ -105,7 +133,7 @@ export default function Settings() {
                         <label className="text-[12px] font-bold text-[#E0E0E073] uppercase tracking-wider">Bio</label>
                         <textarea
                             value={bio}
-                            onChange={e => setBio(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBio(e.target.value)}
                             placeholder="Tell others about yourself..."
                             rows={3}
                             className="bg-[#030303] border border-[#E0E0E033] rounded-[8px] px-4 py-3 text-[14px] text-[#E0E0E0] font-body focus:outline-none focus:border-[#E0E0E0] transition-colors resize-none"
@@ -125,7 +153,7 @@ export default function Settings() {
                         </div>
                         <select
                             value={defaultLanguage}
-                            onChange={e => setDefaultLanguage(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDefaultLanguage(e.target.value)}
                             className="bg-[#030303] border border-[#E0E0E033] rounded-[8px] px-4 py-2 text-[14px] text-[#E0E0E0] font-body focus:outline-none focus:border-[#E0E0E0] transition-colors appearance-none cursor-pointer"
                         >
                             <option value="python">Python</option>
@@ -144,7 +172,7 @@ export default function Settings() {
                                 min={10}
                                 max={20}
                                 value={editorFontSize}
-                                onChange={e => setEditorFontSize(Number(e.target.value) as any)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditorFontSize(Number(e.target.value) as any)}
                                 className="w-32 accent-[#E0E0E0]"
                             />
                             <span className="text-[14px] font-code text-[#E0E0E0] w-6 text-right">{editorFontSize}</span>
