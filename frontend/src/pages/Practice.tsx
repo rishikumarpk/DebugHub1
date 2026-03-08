@@ -35,6 +35,12 @@ export default function Practice() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Initial load
+    useEffect(() => {
+        fetchChallenge();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // Timer
     useEffect(() => {
         if (challenge && success === null && !loading) {
