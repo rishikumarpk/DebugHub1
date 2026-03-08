@@ -61,13 +61,21 @@ passport.use(new GoogleStrategy({
                         data: {
                             email,
                             googleId: profile.id,
-                            username: `user_${Math.floor(Math.random() * 100000)}`, // simple unique username
+                            username: profile.displayName || `user_${Math.floor(Math.random() * 100000)}`,
                             avatarUrl: profile.photos?.[0].value,
                             streak: {
                                 create: { currentStreak: 0, longestStreak: 0, rhythmScore: 0, avgReasoningScore: 0 }
                             }
                         }
                     });
+
+                    // Send the automated welcome email
+                    try {
+                        const { sendWelcomeEmail } = require('./services/email.service');
+                        sendWelcomeEmail(email, profile.displayName || 'Awesome Engineer');
+                    } catch (emailErr) {
+                        console.error('Failed to send welcome email', emailErr);
+                    }
                 }
             }
             return done(null, user);

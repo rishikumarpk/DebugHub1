@@ -38,9 +38,8 @@ router.get('/today', authenticateJWT, async (req: RequestWithUser | any, res: Re
         });
 
         if (!challenge) {
-            // Determine a universal difficulty for today (switches daily)
-            const daySeed = Math.floor(today.getTime() / (1000 * 60 * 60 * 24));
-            const difficulty = daySeed % 2 === 0 ? 'MEDIUM' : 'EASY';
+            // Determine a universal difficulty for today (always HARD)
+            const difficulty = 'HARD';
 
             console.log(`Generating universal ${difficulty} challenge for ${language}...`);
 
