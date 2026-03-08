@@ -57,11 +57,11 @@ export const SystemsEngineerView = ({ phase }: any) => {
                         </span>
                     </div>
                     <div ref={containerRef} className="flex-1 p-4 font-mono text-xs overflow-y-auto space-y-1">
-                        {logs.map((L, i) => (
+                        {logs.filter(Boolean).map((L, i) => (
                             <div key={i} className="flex space-x-3">
-                                <span className="text-gray-500 shrink-0">{L.time || '08:0X:XX'}</span>
-                                <span className={`w-12 shrink-0 ${(bgColors as any)[L.level]}`}>{L.level}</span>
-                                <span className="text-gray-300 break-words">{L.message}</span>
+                                <span className="text-gray-500 shrink-0">{L?.time || '08:0X:XX'}</span>
+                                <span className={`w-12 shrink-0 ${(bgColors as any)[L?.level] || 'text-gray-400'}`}>{L?.level || 'INFO'}</span>
+                                <span className="text-gray-300 break-words">{L?.message || ''}</span>
                             </div>
                         ))}
                     </div>
