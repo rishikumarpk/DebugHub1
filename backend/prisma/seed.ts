@@ -203,7 +203,10 @@ async function main() {
   for (const challenge of challenges) {
     await prisma.dailyChallenge.upsert({
       where: {
-        date: challenge.date,
+        date_language: {
+          date: challenge.date,
+          language: challenge.language,
+        }
       },
       update: {},
       create: challenge,
