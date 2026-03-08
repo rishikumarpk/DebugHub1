@@ -33,13 +33,7 @@ export default function Practice() {
     const [attemptId, setAttemptId] = useState<string | null>(null);
     const [showSplitView, setShowSplitView] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    // Initial load
-    useEffect(() => {
-        fetchChallenge();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const [loading, setLoading] = useState(false);
 
     // Timer
     useEffect(() => {
@@ -151,9 +145,7 @@ export default function Practice() {
     // Unified layout with persistent selection
     return (
         <div className="w-full h-[calc(100vh-48px)] flex flex-col relative bg-[#030303]">
-            <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 mix-blend-screen pointer-events-none">
-                <source src="/practice-bg.mp4" />
-            </video>
+            <div className="absolute inset-0 opacity-[0.1] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#E0E0E0 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
 
             {loading && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#03030380] backdrop-blur-sm">

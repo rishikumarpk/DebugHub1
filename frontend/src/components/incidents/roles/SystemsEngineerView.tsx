@@ -3,7 +3,7 @@ import { PHASE_1_LOGS, PHASE_2_LOGS, PHASE_2_CYCLED_LOGS, MODULES_PHASE_1, MODUL
 
 export const SystemsEngineerView = ({ phase }: any) => {
     const [logs, setLogs] = useState<any[]>(PHASE_1_LOGS.slice(0, 5));
-    const logsEndRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
@@ -33,7 +33,9 @@ export const SystemsEngineerView = ({ phase }: any) => {
     }, [phase]);
 
     useEffect(() => {
-        logsEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
     }, [logs]);
 
     const bgColors = {
@@ -54,7 +56,7 @@ export const SystemsEngineerView = ({ phase }: any) => {
                             {phase === 'NORMAL' ? 'NORMAL TRAFFIC' : 'FLOOD DETECTED'}
                         </span>
                     </div>
-                    <div className="flex-1 p-4 font-mono text-xs overflow-y-auto space-y-1">
+                    <div ref={containerRef} className="flex-1 p-4 font-mono text-xs overflow-y-auto space-y-1">
                         {logs.map((L, i) => (
                             <div key={i} className="flex space-x-3">
                                 <span className="text-gray-500 shrink-0">{L.time || '08:0X:XX'}</span>
@@ -62,7 +64,6 @@ export const SystemsEngineerView = ({ phase }: any) => {
                                 <span className="text-gray-300 break-words">{L.message}</span>
                             </div>
                         ))}
-                        <div ref={logsEndRef} />
                     </div>
                 </div>
 
