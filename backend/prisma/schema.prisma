@@ -33,7 +33,7 @@ model User {
 
 model DailyChallenge {
   id             String   @id @default(cuid())
-  date           DateTime @unique
+  date           DateTime
   type           String   @default("DEBUGGING") // DEBUGGING | CODE_REVIEW
   language       String
   bugType        String   // SYNTAX | LOGICAL | EDGE_CASE | PERFORMANCE | REAL_WORLD
