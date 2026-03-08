@@ -46,40 +46,54 @@ router.get('/today', authenticateJWT, async (req: RequestWithUser | any, res: Re
             const type = 'DEBUGGING'; // Daily challenges are usually debugging
             const generated = await generateChallenge(language, type, difficulty);
 
-            challenge = await prisma.dailyChallenge.create({
-                data: {
-                    date: today,
-                    type,
-                    language,
-                    difficulty,
-                    bugType: generated.bugType || 'LOGICAL',
-                    context: generated.context,
-                    buggyCode: generated.buggyCode,
-                    correctCode: generated.correctCode,
-                    expectedOutput: generated.expectedOutput,
-                    issues: generated.issues,
-                    hint1: generated.hint1 || "Analyze the logic flow carefully.",
-                    hint2: generated.hint2 || "Trace the values through the functions.",
-                    hint3: generated.hint3 || "The fix involves correcting a subtle logical oversight."
-                }
-            });
+            try {
+                challenge = await prisma.dailyChallenge.create({
+                    data: {
+                        date: today,
+                        type,
+                        language,
+                        difficulty,
+                        bugType: generated.bugType || 'LOGICAL',
+                        context: generated.context,
+                        buggyCode: generated.buggyCode,
+                        correctCode: generated.correctCode,
+                        expectedOutput: generated.expectedOutput,
+                        issues: generated.issues,
+                        hint1: generated.hint1 || "Analyze the logic flow carefully.",
+                        hint2: generated.hint2 || "Trace the values through the functions.",
+                        hint3: generated.hint3 || "The fix involves correcting a subtle logical oversight."
+                    }
+                });
 
-            // Create AI and Expert diagnostic paths
-            if (generated.diagnosticPath) {
-                await prisma.diagnosticPath.create({
-                    data: {
-                        challengeId: challenge.id,
-                        pathType: 'AI',
-                        steps: JSON.stringify(generated.diagnosticPath.aiSteps || generated.diagnosticPath.expertSteps)
+                // Create AI and Expert diagnostic paths
+                if (generated.diagnosticPath) {
+                    await prisma.diagnosticPath.create({
+                        data: {
+                            challengeId: challenge.id,
+                            pathType: 'AI',
+                            steps: JSON.stringify(generated.diagnosticPath.aiSteps || generated.diagnosticPath.expertSteps)
+                        }
+                    });
+                    await prisma.diagnosticPath.create({
+                        data: {
+                            challengeId: challenge.id,
+                            pathType: 'EXPERT',
+                            steps: JSON.stringify(generated.diagnosticPath.expertSteps)
+                        }
+                    });
+                }
+            } catch (createErr: any) {
+                if (createErr.code === 'P2002') {
+                    console.log(`[Collision Avoidance] Challenge already generated concurrently for ${language}. Fetching existing...`);
+                    challenge = await prisma.dailyChallenge.findFirst({
+                        where: { date: today, language: language }
+                    });
+                    if (!challenge) {
+                        throw new Error('Collision detected but could not retrieve generated challenge.');
                     }
-                });
-                await prisma.diagnosticPath.create({
-                    data: {
-                        challengeId: challenge.id,
-                        pathType: 'EXPERT',
-                        steps: JSON.stringify(generated.diagnosticPath.expertSteps)
-                    }
-                });
+                } else {
+                    throw createErr;
+                }
             }
         }
 
